@@ -2,12 +2,39 @@
 
 Rxjs algorithms.
 
+- [chain](#chain)
 - [zipDiff](#zipDiff)
 - [operators/bufferDistinct](#operators/bufferDistinct)
 - [operators/complete](#operators/complete)
 - [dynamodb/batchGet](#dynamodb/batchGet)
 - [dynamodb/batchWrite](#dynamodb/batchWrite)
 - [dynamodb/queryAll](#dynamodb/queryAll)
+
+## chain
+
+Takes multiple observables and concats them, but emits all items.
+
+```js
+import {chain} from 'blueflag-rxjs';
+
+chain(
+    obsA: Observable,
+    obsB: Observable,
+    ...
+): Observable
+```
+
+```js
+chain(obsA, obsB)
+
+// obsA adds "1"
+// obsA adds "2"
+// obsB adds "3"
+// obsB adds "4"
+
+// output: "1", "2", "3", "4"
+
+```
 
 ## zipDiff
 
