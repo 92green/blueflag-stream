@@ -59,6 +59,32 @@ describe('memoryCache', () => {
 
     });
 
+    it('should return even when ids from backend match existing cache item', async () => {
+        const fetch = jest.fn((id) => of({test: '123'}).pipe(delay(3)));
+        let fetcher = flatMap((payload) => {
+            if(payload.item) { // when used in multiCache, this check is done for you
+                return of(payload);
+            }
+            return fetch(payload.id);
+        });
+
+        let cache = memoryCache();
+
+        let result1 = await of("a").pipe(
+            cache.load,
+            fetcher,
+            map(ii => ({id: "a"})),
+            cache.save
+        ).toPromise()
+        let result = await of("b").pipe(
+            cache.load,
+            fetcher,
+            map(ii => ({id: "a"})),
+            cache.save
+        ).toPromise()
+        expect(result).toEqual(result1)    
+    })
+
     it('should collect values with a common id and return the result of the same fetch', () => {
 
         const fetch = jest.fn((id) => of(values[id]).pipe(delay(3)));
