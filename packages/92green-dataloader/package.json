@@ -14,9 +14,9 @@
     "start": "tsdx watch",
     "build": "tsdx build",
     "test": "tsdx test --coverage",
-    "lint": "tsdx lint",
+    "lint": "yarn eslint src/**/* --ext .js,.ts,.jsx,.tsx",
     "prepare": "tsdx build",
-    "size": "size-limit",
+    "size": "yarn build && size-limit",
     "analyze": "size-limit --why",
     "test-all": "yarn test && yarn lint && yarn size"
   },
@@ -28,15 +28,15 @@
   },
   "name": "92green-dataloader",
   "author": "Damien Clarke",
-  "module": "dist/92green-dataloader.esm.js",
+  "module": "dist/green-dataloader.esm.js",
   "size-limit": [
     {
-      "path": "dist/92green-dataloader.cjs.production.min.js",
-      "limit": "10 KB"
+      "path": "dist/green-dataloader.cjs.production.min.js",
+      "limit": "7 KB"
     },
     {
-      "path": "dist/92green-dataloader.esm.js",
-      "limit": "10 KB"
+      "path": "dist/green-dataloader.esm.js",
+      "limit": "7 KB"
     }
   ],
   "devDependencies": {

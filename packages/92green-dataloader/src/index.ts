@@ -15,7 +15,7 @@ export type Options<T,K> = {
 export function createDataloader<T,K>(
     batchLoader: BatchLoader<T,K>,
     options: Options<T,K>
-) {
+): Dataloader<K,T|undefined,string> {
     const {
         resultToKey,
         cacheKeyFn = JSON.stringify,
@@ -25,7 +25,7 @@ export function createDataloader<T,K>(
         batchScheduleFn
     } = options;
 
-    return new Dataloader(async (keys: readonly K[]): Promise<(T|undefined)[]> => {
+    return new Dataloader<K,T|undefined,string>(async (keys: readonly K[]): Promise<(T|Error|undefined)[]> => {
         const items = await batchLoader(keys);
         const itemsByKey = new Map<string,T>(items.map(item => {
             return [cacheKeyFn(resultToKey(item)), item];
