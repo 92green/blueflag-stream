@@ -1,4 +1,4 @@
-import {createDataloader} from '../src';
+import {createDataloader, createDataloaderPool} from '../src';
 
 type Person = {
     id: string;
@@ -200,4 +200,82 @@ describe('createDataloader', () => {
         expect(loader._cacheMap.size).toBe(2);
 
     });
+});
+
+describe('createDataloaderPool', () => {
+
+    const zombies = new Map<string,Person>([
+        ['a', {id: 'a', name: 'AAAAA'}]
+    ]);
+
+    const batchLoader = jest.fn(async (poolKey: string, ids: readonly string[]): Promise<Person[]> => {
+        return ids
+            .map(id => poolKey === 'people' ? people.get(id) : zombies.get(id))
+            .filter((p): p is Person => !!p);
+    });
+
+    const resultToKey = jest.fn((person: Person): string => person.id);
+
+    it('should create pools as accessed', async () => {
+
+        const pool = createDataloaderPool<Person,string>(
+            batchLoader,
+            {
+                batchScheduleFn,
+                resultToKey
+            }
+        );
+
+        const promises = [
+            pool.get('people').load('a'),
+            pool.get('people').load('b'),
+            pool.get('zombies').load('a')
+        ];
+
+        jest.runAllTimers();
+        const results = await Promise.all(promises);
+        expect(results).toEqual([
+            {id: 'a', name: 'Ankle'},
+            {id: 'b', name: 'Bankle'},
+            {id: 'a', name: 'AAAAA'}
+        ]);
+
+    });
+
+    it('should have max pools', async () => {
+
+        const pool = createDataloaderPool<Person,string>(
+            batchLoader,
+            {
+                batchScheduleFn,
+                resultToKey,
+                maxPools: 2
+            }
+        );
+
+        const promises = [
+            pool.get('people').load('a'),
+            pool.get('people').load('b'),
+            pool.get('zombies').load('a')
+        ];
+
+        jest.runAllTimers();
+        await Promise.all(promises);
+
+        //
+        // try to make another pool and hit the limit
+        //
+
+        const morePromises = [
+            pool.get('zombies2').load('a')
+        ];
+
+        jest.runAllTimers();
+        await Promise.all(morePromises);
+
+        // @ts-expect-error
+        expect(pool._cacheMap.size).toBe(2);
+
+    });
+
 });
