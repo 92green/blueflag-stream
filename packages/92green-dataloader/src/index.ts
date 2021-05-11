@@ -40,3 +40,40 @@ export function createDataloader<T,K>(
         batchScheduleFn
     });
 }
+
+type PoolBatchLoader<T,K> = (poolId: string, keys: readonly K[]) => Promise<T[]>;
+
+type PoolOptions<T,K> = Options<T,K> & {
+    maxPools?: number;
+};
+
+type DataloaderPool<K,T> = {
+    get: (poolKey: string) => Dataloader<K,T|undefined,string>;
+    _cacheMap: unknown;
+};
+
+export function createDataloaderPool<T,K>(
+    batchLoader: PoolBatchLoader<T,K>,
+    options: PoolOptions<T,K>
+): DataloaderPool<K,T> {
+
+    const {maxPools, ...loaderOptions} = options;
+
+    const _cacheMap = maxPools
+        ? new LRUMap<string,Dataloader<K,T|undefined,string>>(maxPools)
+        : new Map<string,Dataloader<K,T|undefined,string>>();
+
+    const get = (poolKey: string): Dataloader<K,T|undefined,string> => {
+        const loader = _cacheMap.get(poolKey);
+        if(loader) return loader;
+
+        const newLoader = createDataloader((keys) => batchLoader(poolKey, keys), loaderOptions);
+        _cacheMap.set(poolKey, newLoader);
+        return newLoader;
+    };
+
+    return {
+        _cacheMap,
+        get
+    };
+}
