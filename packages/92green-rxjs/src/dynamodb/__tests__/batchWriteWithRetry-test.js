@@ -296,4 +296,50 @@ describe('batchWriteWithRetry', () => {
                 expect(e).toBe('!!!');
             });
     });
+
+    it('batchWriteWithRetry should cope with undefined unprocessed items', async () => {
+
+        let responsePayloads = [
+            {}
+        ];
+
+        let docClient = {
+            batchWrite: jest.fn()
+                .mockImplementationOnce(() => ({
+                    promise: () => Promise.resolve(responsePayloads[0])
+                }))
+        };
+
+        let tapFn = jest.fn();
+
+        let params = [
+            {
+                PutRequest: {
+                    Item: {
+                        foo: 100
+                    }
+                }
+            }
+        ];
+
+        await from(params)
+            .pipe(
+                batchWriteWithRetry({
+                    docClient,
+                    tableName: 'fake-table'
+                }),
+                tap(tapFn)
+            )
+            .toPromise();
+
+        expect(docClient.batchWrite).toHaveBeenCalledTimes(1);
+        expect(docClient.batchWrite.mock.calls[0][0]).toEqual({
+            RequestItems: {
+                'fake-table': params
+            }
+        });
+
+        expect(tapFn).toHaveBeenCalledTimes(1);
+        expect(tapFn.mock.calls[0][0]).toEqual(responsePayloads[0]);
+    });
 });
