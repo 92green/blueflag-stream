@@ -53,7 +53,7 @@ export default (config: Config, feedbackPipe: FeedbackPipe = obs => obs) => {
     let sendQueryWithRetry = (params: any) => sendQuery(params).pipe(
         expand((response: Response) => {
             let {UnprocessedItems} = response;
-            if(Object.keys(UnprocessedItems).length > 0) {
+            if(UnprocessedItems && Object.keys(UnprocessedItems).length > 0) {
                 return of(response).pipe(
                     feedbackPipe,
                     flatMap(() => sendQuery({
