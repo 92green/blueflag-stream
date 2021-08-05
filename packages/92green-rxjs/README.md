@@ -14,6 +14,7 @@ Rxjs algorithms.
 - [dynamodb/batchGetWithRetry](#dynamodbbatchGetWithRetry)
 - [dynamodb/batchWriteWithRetry](#dynamodbbatchWrite)
 - [dynamodb/queryAll](#dynamodbqueryAll)
+- [dynamodb/scanAll](#dynamodbscanAll)
 
 ## multiCache
 
@@ -279,3 +280,19 @@ queryAll(
     feedbackObservable: ?Observable
 ): Observable
 ```
+
+### dynamodb/scanAll
+
+Turns AWS `DocClient.scan()` into an observable which will by default keep requesting whenever there is more data to be paginated.
+
+
+```js
+import {scanAll} from '92green-rxjs/dynamodb';
+
+scanAll(
+    docClient: DocClient,
+    params: Params,
+    feedbackObservable: ?Observable
+): Observable
+```
+
