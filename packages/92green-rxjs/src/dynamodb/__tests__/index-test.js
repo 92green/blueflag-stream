@@ -1,5 +1,6 @@
 // @flow
 import {queryAll} from '../index';
+import {scanAll} from '../index';
 import {batchGetWithRetry} from '../index';
 import {batchWriteWithRetry} from '../index';
 import queryAllOriginal from '../queryAll';
