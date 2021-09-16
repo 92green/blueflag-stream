@@ -7,6 +7,7 @@ import {from} from 'rxjs';
 import {expand} from 'rxjs/operators';
 import {bufferCount} from 'rxjs/operators';
 import {flatMap} from 'rxjs/operators';
+import {concatMap} from 'rxjs/operators';
 
 type QueryResult = {
     promise: () => Promise<any>
@@ -67,7 +68,7 @@ export default (config: Config, feedbackPipe: FeedbackPipe = obs => obs) => {
 
     return pipe(
         bufferCount(MAX_BATCH_WRITE),
-        flatMap((itemArray) => {
+        concatMap((itemArray) => {
             let sendObs = sendQueryWithRetry({
                 RequestItems: {
                     [config.tableName]: itemArray
