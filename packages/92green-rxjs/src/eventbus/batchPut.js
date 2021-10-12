@@ -31,7 +31,6 @@ export default (config: Config) => (obs: Observable) => {
         ).pipe(
             map(([input, result]) => {
                 let [record, info] = input;
-                console.log(record, info)
                 return [record, {
                     ...info, 
                     result,
