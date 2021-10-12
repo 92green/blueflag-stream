@@ -1,6 +1,7 @@
 import {Observable, interval, zip, of} from "rxjs";
 import {map, filter, expand, bufferCount, concatMap,share, throttle} from 'rxjs/operators';
 const MAX_EVENT_BRIDGE_PUT = 10;
+const DEFAULT_THROTTLE_MS = 500;
 type Config = {
     eventBridge: any,
     detailType: string,
@@ -57,7 +58,7 @@ export default (config: Config) => (obs: Observable) => {
                         RETRY_ON.includes(info.result.ErrorCode) &&
                         info.attempts < config.maxAttempts
                 }),
-                throttle(() => interval(500)),
+                throttle(() => interval(config.throttleMs || DEFAULT_THROTTLE_MS)),
                 sendToEventBus
             )
         )
