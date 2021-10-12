@@ -1,5 +1,4 @@
 import batchPut from '../batchPut';
-const AWS = require('aws-sdk-mock');
 import {from} from "rxjs";
 import { first } from 'rxjs/operators';
 describe('batchPut', () => {
