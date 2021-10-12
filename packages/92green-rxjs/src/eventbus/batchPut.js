@@ -1,3 +1,4 @@
+// @flow
 import {Observable, interval, zip, of} from "rxjs";
 import {map, filter, expand, bufferCount, concatMap,share, throttle} from 'rxjs/operators';
 const MAX_EVENT_BRIDGE_PUT = 10;
@@ -9,12 +10,12 @@ type Config = {
     eventBusName: string,
     maxAttempts: number,
     throttleMs: number
-}
+};
 
 const RETRY_ON = [
     "ThrottlingException",
     "InternalFailure"
-]
+];
 
 export default (config: Config) => (obs: Observable) => {
     const sendToEventBus = (obs) => {
@@ -35,10 +36,10 @@ export default (config: Config) => (obs: Observable) => {
                     ...info, 
                     result,
                     attempts: ++info.attempts
-                }]
+                }];
             })
-        )
-    }
+        );
+    };
     return obs.pipe(
         map((obj: Object) => {
             return [{
@@ -47,20 +48,20 @@ export default (config: Config) => (obs: Observable) => {
                 EventBusName: config.eventBusName,
                 Source: config.source,
                 Time: new Date()
-            }, {attempts: 0}]
-         }),
-         sendToEventBus,
-         expand(ii => of(ii)
+            }, {attempts: 0}];
+        }),
+        sendToEventBus,
+        expand(ii => of(ii)
             .pipe(
-                filter(([_, info]) => {
+                filter(([, info]) => {
                     return !info.result.EventId && 
                         RETRY_ON.includes(info.result.ErrorCode) &&
-                        info.attempts < config.maxAttempts
+                        info.attempts < config.maxAttempts;
                 }),
                 throttle(() => interval(config.throttleMs || DEFAULT_THROTTLE_MS)),
                 sendToEventBus
             )
         )
 
-    )
-}
+    );
+};
