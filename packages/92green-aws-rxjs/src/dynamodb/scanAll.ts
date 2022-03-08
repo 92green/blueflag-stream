@@ -2,11 +2,12 @@
 import {Observable} from 'rxjs';
 import {of} from 'rxjs';
 import {EMPTY} from 'rxjs';
-import {concatMap} from 'rxjs/operators';
+import {concatMap, map} from 'rxjs/operators';
 import {mergeMap} from 'rxjs/operators';
 import {expand} from 'rxjs/operators';
 import {ScanCommand, ScanCommandInput} from "@aws-sdk/client-dynamodb";
 import type {AttributeValue, ScanCommandOutput, DynamoDBClient} from "@aws-sdk/client-dynamodb"
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 
 type FeedbackPipe<T> = (obs: Observable<T>) => Observable<T>;
 
@@ -39,6 +40,7 @@ export default (dynamoDBClient: DynamoDBClient, params: any, feedbackPipe: Feedb
             }
             return EMPTY;
         }),
-        concatMap(response => response.Items ? response.Items : [])
+        concatMap(response => response.Items ? response.Items : []),
+        map(ii => unmarshall(ii))
     );
 };
