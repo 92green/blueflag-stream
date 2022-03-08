@@ -3,11 +3,12 @@ import {EMPTY} from 'rxjs';
 import {pipe} from 'rxjs';
 import {of} from 'rxjs';
 import {from} from 'rxjs';
-import {expand, mergeMap} from 'rxjs/operators';
+import {expand, map, mergeMap} from 'rxjs/operators';
 import {bufferCount} from 'rxjs/operators';
 import {concatMap} from 'rxjs/operators';
 import {BatchWriteItemCommand, BatchWriteItemCommandInput, BatchWriteItemCommandOutput} from "@aws-sdk/client-dynamodb";
-import type {AttributeValue, BatchGetItemCommandOutput, DynamoDBClient} from "@aws-sdk/client-dynamodb"
+import type {BatchGetItemCommandOutput, DynamoDBClient} from "@aws-sdk/client-dynamodb"
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 
 type Config = {
     dynamoDBClient: DynamoDBClient,
@@ -19,7 +20,7 @@ type FeedbackPipe<T> = (obs: Observable<T>) => Observable<T>;
 
 const MAX_BATCH_WRITE = 25;
 
-export default function (config: Config, feedbackPipe: FeedbackPipe<BatchGetItemCommandOutput> = obs => obs): UnaryFunction<Observable<{[key: string]: AttributeValue;}>, Observable<BatchWriteItemCommandOutput | {[key: string]: AttributeValue;}>> {
+export default function <Value>(config: Config, feedbackPipe: FeedbackPipe<BatchGetItemCommandOutput> = obs => obs): UnaryFunction<Observable<Value>, Observable<Value>> {
     let sendQuery = (params: BatchWriteItemCommandInput): Observable<BatchWriteItemCommandOutput> => {
         return new Observable((subscriber: any) => {
             config
@@ -50,6 +51,7 @@ export default function (config: Config, feedbackPipe: FeedbackPipe<BatchGetItem
     );
 
     return pipe(
+        map(ii => marshall(ii)),
         bufferCount(MAX_BATCH_WRITE),
         concatMap((itemArray) => {
             let sendObs = sendQueryWithRetry({
@@ -58,12 +60,9 @@ export default function (config: Config, feedbackPipe: FeedbackPipe<BatchGetItem
                 }
             });
 
-            if (!config.returnItems) {
-                return sendObs;
-            }
-
             return sendObs.pipe(
-                mergeMap(() => from(itemArray))
+                mergeMap(() => from(itemArray)),
+                map(ii => unmarshall(ii) as Value)
             );
         })
     );

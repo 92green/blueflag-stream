@@ -4,7 +4,7 @@ import {from, lastValueFrom} from 'rxjs';
 import {toArray} from 'rxjs/operators'; //tap
 import {mockClient} from "aws-sdk-client-mock";
 import {BatchGetItemCommand, DynamoDBClient} from "@aws-sdk/client-dynamodb"; //BatchGetItemCommandOutput
-import { marshall } from '@aws-sdk/util-dynamodb';
+import {marshall} from '@aws-sdk/util-dynamodb';
 
 describe('batchGetWithRetry', () => {    
     it('returns items from the batch get.', async () => {
