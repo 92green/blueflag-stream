@@ -1,9 +1,10 @@
 //@flow
 import {DynamoDBClient, QueryCommand, QueryCommandInput, QueryCommandOutput, AttributeValue} from '@aws-sdk/client-dynamodb';
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 import {Observable} from 'rxjs';
 import {of} from 'rxjs';
 import {EMPTY} from 'rxjs';
-import {mergeMap} from 'rxjs/operators';
+import {map, mergeMap} from 'rxjs/operators';
 import {concatMap} from 'rxjs/operators';
 import {expand} from 'rxjs/operators';
 import {takeWhile} from 'rxjs/operators';
@@ -40,6 +41,7 @@ export default (dynamoClient: DynamoDBClient, params: any, feedbackPipe: Feedbac
             return EMPTY;
         }),
         takeWhile(response => Boolean(response.LastEvaluatedKey), true),
-        concatMap(response => response.Items ? response.Items : [])
+        concatMap(response => response.Items ? response.Items : []),
+        map(ii => unmarshall(ii))
     );
 };

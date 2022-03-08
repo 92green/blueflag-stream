@@ -94,17 +94,18 @@ describe('batchWriteWithRetry', () => {
 
         let dynamoDBClient = new DynamoDBClient({});
         mockClient(dynamoDBClient).rejects('!!!')
-        await from([123])
+        await lastValueFrom(
+            from([123])
             .pipe(
                 batchWriteWithRetry({
                     dynamoDBClient,
                     tableName: 'fake-table'
                 })
             )
-            .toPromise()
-            .catch((e: Error) => {
-                expect(e.message).toBe('!!!');
-            });
+        )
+        .catch((e: Error) => {
+            expect(e.message).toBe('!!!');
+        });
     });
 
 });
