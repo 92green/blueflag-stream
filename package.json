@@ -11,6 +11,7 @@
     "watch": "yarn lerna run watch --parallel"
   },
   "dependencies": {
-    "lerna": "^3.10.7"
+    "lerna": "^3.10.7",
+    "typescript": "^4.5.5"
   }
 }

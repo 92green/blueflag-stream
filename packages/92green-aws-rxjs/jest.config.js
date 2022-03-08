@@ -4,8 +4,7 @@ module.exports = {
         "src/**/*.{ts,tsx}",
         "!src/requests/**/*"
     ],
-    // testMatch: [ "src/*/__tests__/**/*.[jt]s?(x)"],
-    testPathIgnorePatterns: ['/node_modules', 'dist'],
+    testPathIgnorePatterns: ['/node_modules', './dist'],
     coverageThreshold: {
         global: {
             statements: 100,
