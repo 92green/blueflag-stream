@@ -19,7 +19,7 @@
   "main": "lib/index.js",
   "scripts": {
     "prepublish": "yarn tsc",
-    "build": "rm -rf lib && NODE_ENV=production yarn tsc --ignore '**/__tests__/*.js'",
+    "build": "rm -rf lib && NODE_ENV=production yarn tsc",
     "build-all": "yarn tsc",
     "test": "yarn build && yarn jest --maxWorkers=1"
   },
