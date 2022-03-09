@@ -1,4 +1,3 @@
-// @flow
 import batchGetWithRetry from '../batchGetWithRetry';
 import {from, lastValueFrom} from 'rxjs';
 import {toArray} from 'rxjs/operators'; //tap

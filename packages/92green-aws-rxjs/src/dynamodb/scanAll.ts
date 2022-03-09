@@ -1,4 +1,3 @@
-//@flow
 import {Observable} from 'rxjs';
 import {of} from 'rxjs';
 import {EMPTY} from 'rxjs';

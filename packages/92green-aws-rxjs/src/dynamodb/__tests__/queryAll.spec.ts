@@ -1,4 +1,3 @@
-// @flow
 import queryAll from '../queryAll';
 import {toArray} from 'rxjs/operators';
 import {mockClient} from "aws-sdk-client-mock";
@@ -82,7 +81,7 @@ describe('queryAll', () => {
         expect(response).toContainEqual(item2);
     });
 
-    it('queryAll should accept feedback pipe that gets used in each feedback loop', async () => {
+    it('should accept feedback pipe that gets used in each feedback loop', async () => {
         let dynamoDBClient = new DynamoDBClient({});
         let params = {
             TableName: 'fake-table'
