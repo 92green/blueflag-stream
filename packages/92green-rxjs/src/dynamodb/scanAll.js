@@ -1,4 +1,6 @@
 //@flow
+
+// Deprecated use 92green-aws-rxjs
 import {Observable} from 'rxjs';
 import {of} from 'rxjs';
 import {EMPTY} from 'rxjs';

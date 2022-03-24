@@ -1,4 +1,6 @@
 //@flow
+// Deprecated use 92green-aws-rxjs
+
 import {Observable} from 'rxjs';
 import {EMPTY} from 'rxjs';
 import {pipe} from 'rxjs';
@@ -32,6 +34,7 @@ type Response = {
 type FeedbackPipe = (obs: Observable) => Observable;
 
 const MAX_BATCH_READ = 100;
+
 
 export default (config: Config, feedbackPipe: FeedbackPipe = obs => obs) => {
 
