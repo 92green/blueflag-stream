@@ -1,4 +1,5 @@
 // @flow
+// Deprecated use 92green-aws-rxjs
 import {Observable, interval, zip, of} from "rxjs";
 import {map, filter, expand, bufferCount, concatMap,share, throttle} from 'rxjs/operators';
 const MAX_EVENT_BRIDGE_PUT = 10;

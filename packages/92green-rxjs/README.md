@@ -11,6 +11,8 @@ Rxjs algorithms.
 - [zipDiff](#zipDiff)
 - [operators/bufferDistinct](#operatorsbufferDistinct)
 - [operators/complete](#operatorscomplete)
+
+## The following are deprecated in favor of seperate 92green-aws-rxjs package.
 - [dynamodb/batchGetWithRetry](#dynamodbbatchGetWithRetry)
 - [dynamodb/batchWriteWithRetry](#dynamodbbatchWrite)
 - [dynamodb/queryAll](#dynamodbqueryAll)
@@ -209,6 +211,8 @@ obs.pipe(
 
 ## dynamodb/batchGetWithRetry
 
+_deprecated_
+
 Turns AWS `DocClient.batchGet()` into a pipeable observable which accepts an observable of ids and calls `batchGet()`, batching items to 100 at a time and retrying dynamo's `UnprocessedKeys` automatically.
 
 
@@ -236,6 +240,8 @@ from(keys)
 
 
 ## dynamodb/batchWriteWithRetry
+
+_deprecated_
 
 Turns AWS `DocClient.batchWrite()` into a pipeable observable which accepts an observable of params and calls `batchWrite()`, batching items to 25 at a time and retrying dynamo's `UnprocessedItems` automatically.
 
@@ -268,6 +274,8 @@ from([{
 
 ## dynamodb/queryAll
 
+_deprecated_
+
 Turns AWS `DocClient.query()` into an observable which will by default keep requesting whenever there is more data to be paginated.
 
 
@@ -282,6 +290,8 @@ queryAll(
 ```
 
 ### dynamodb/scanAll
+
+_deprecated_
 
 Turns AWS `DocClient.scan()` into an observable which will by default keep requesting whenever there is more data to be paginated.
 

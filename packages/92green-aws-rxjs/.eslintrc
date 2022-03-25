@@ -1,0 +1,13 @@
+{
+    "extends": [
+        "eslint-config-blueflag",
+    ],
+    "rules": {
+        "newline-per-chained-call": "off"
+    },
+    "settings": {
+        "react": {
+            "version": "detect"
+        }
+    }
+}
