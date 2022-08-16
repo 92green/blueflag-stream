@@ -41,13 +41,13 @@ export function createDataloader<T,K>(
     });
 }
 
-type PoolBatchLoader<T,K> = (poolId: string, keys: readonly K[]) => Promise<T[]>;
+export type PoolBatchLoader<T,K> = (poolId: string, keys: readonly K[]) => Promise<T[]>;
 
-type PoolOptions<T,K> = Options<T,K> & {
+export type PoolOptions<T,K> = Options<T,K> & {
     maxPools?: number;
 };
 
-type DataloaderPool<K,T> = {
+export type DataloaderPool<K,T> = {
     get: (poolKey: string) => Dataloader<K,T|undefined,string>;
     _cacheMap: unknown;
 };
