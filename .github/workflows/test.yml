@@ -10,5 +10,11 @@ jobs:
         persist-credentials: false
     - name: Build
       run: yarn prep && yarn build
+      env:
+        NODE_OPTIONS: "--openssl-legacy-provider"
+    - name: Lerna bootstrap (since release/test)
+      run: yarn lerna bootstrap --since=origin/release/test --include-dependencies --include-dependents --concurrency=1
     - name: Test
       run: yarn test-all
+      env:
+        NODE_OPTIONS: "--openssl-legacy-provider"
