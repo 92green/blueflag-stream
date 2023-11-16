@@ -1,4 +1,4 @@
-import batchPut from '../batchPut';
+import batchPut, {BatchPutError} from '../batchPut';
 import {from, lastValueFrom} from "rxjs";
 import {EventBridgeClient, PutEventsCommand, PutEventsCommandOutput} from "@aws-sdk/client-eventbridge";
 import {mockClient} from "aws-sdk-client-mock";
@@ -43,6 +43,46 @@ describe('batchPut', () => {
             ),
         )
         expect(fn).toBeCalledTimes(2);
+    });
+
+    it('Throws error on alternative failure', async  () => {
+        expect.assertions(3);
+        let eventBridgeClient = new EventBridgeClient({});
+        let responsePayload: PutEventsCommandOutput = {
+            $metadata: {},
+            Entries: [
+                {
+                    ErrorCode: "DifferentError"
+                }
+            ]
+        }
+
+        let fn = jest.fn()
+            .mockImplementationOnce(() => Promise.resolve(responsePayload))
+
+        mockClient(eventBridgeClient)
+            .on(PutEventsCommand)
+            .callsFake(fn)
+
+        const message = {test: 'test1'};
+        try {
+            await lastValueFrom(from([message])
+                .pipe(
+                    batchPut({
+                        eventBridgeClient,
+                        detailType: 'test',
+                        source: 'learningrecord.test',
+                        eventBusName: 'eventbustest',
+                        maxAttempts: 10,
+                        throttleMs: 0
+                    })
+                )
+            );
+        } catch (err) {
+            expect(err).toBeInstanceOf(Error);
+            expect((err as BatchPutError).code).toEqual('DifferentError');
+            expect((err as BatchPutError).data).toEqual(expect.objectContaining({Detail: JSON.stringify(message)}));
+        }
     });
     it('buffers entrys into one call', async () => {
         let eventBridgeClient = new EventBridgeClient({});
