@@ -34,7 +34,7 @@ export default (config: Config) => (obs: Observable) => {
             map(([input, result]) => {
                 let [record, info] = input;
                 return [record, {
-                    ...info,
+                    ...info, 
                     result,
                     attempts: ++info.attempts
                 }];
@@ -55,7 +55,7 @@ export default (config: Config) => (obs: Observable) => {
         expand(ii => of(ii)
             .pipe(
                 filter(([, info]) => {
-                    return !info.result.EventId &&
+                    return !info.result.EventId && 
                         RETRY_ON.includes(info.result.ErrorCode) &&
                         info.attempts < config.maxAttempts;
                 }),
