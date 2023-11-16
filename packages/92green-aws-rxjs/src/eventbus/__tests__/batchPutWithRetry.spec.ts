@@ -2,7 +2,7 @@ import batchPut from '../batchPut';
 import {from, lastValueFrom} from "rxjs";
 import {EventBridgeClient, PutEventsCommand, PutEventsCommandOutput} from "@aws-sdk/client-eventbridge";
 import {mockClient} from "aws-sdk-client-mock";
-import { toArray } from 'rxjs/operators';
+import { toArray, distinct } from 'rxjs/operators';
 
 describe('batchPut', () => {
     it('retrys on ThrottlingException', async  () => {
@@ -29,7 +29,7 @@ describe('batchPut', () => {
         mockClient(eventBridgeClient)
             .on(PutEventsCommand)
             .callsFake(fn)
-        
+
         await lastValueFrom(from([{test: 'test1'}])
             .pipe(
                 batchPut({
@@ -54,13 +54,16 @@ describe('batchPut', () => {
         mockClient(eventBridgeClient)
             .on(PutEventsCommand)
             .callsFake(fn)
-        await lastValueFrom(from([
+
+        const messages = [
             {test: 'test1'},
             {test: 'test2'},
             {test: 'test3'}
-
-        ])
+        ];
+        await lastValueFrom(
+            from(messages)
             .pipe(
+                distinct(({test}) => test),
                 batchPut({
                     eventBridgeClient,
                     detailType: 'test',
@@ -71,8 +74,9 @@ describe('batchPut', () => {
                 }),
                 toArray()
             ))
-            
-        expect(fn.mock.calls[0][0].Entries.length).toBe(3);
+
+        expect(fn).toHaveBeenCalled();
+        expect(fn.mock.calls[0][0].Entries).toHaveLength(messages.length);
     });
     it('uses the event bus name specified in the config', async () => {
         let eventBridgeClient = new EventBridgeClient({});
@@ -126,7 +130,7 @@ describe('batchPut', () => {
                 })
                 // toArray()
             )
-        
+
         await lastValueFrom($obs);
         expect(fn.mock.calls.length).toBe(1);
     });
@@ -141,7 +145,7 @@ describe('batchPut', () => {
             mockClient(eventBridgeClient)
                 .on(PutEventsCommand)
                 .callsFake(fn)
-            
+
         let [event] = await lastValueFrom(from([{test: 'test1'}])
             .pipe(
                 batchPut({
@@ -187,4 +191,72 @@ describe('batchPut', () => {
             })
         );
     });
+
+
+  it('does not put groups of messages over the size limit', async () => {
+    const sizeLimit = 10 * 1024; // 10 KB
+    const largeMessage = { test: 'a'.repeat(sizeLimit / 2) }; // Creates a large message half the size of the limit
+    const messages = [largeMessage, largeMessage, largeMessage]; // This should exceed the limit when combined
+
+    let eventBridgeClient = new EventBridgeClient({});
+    let putCmd = jest.fn().mockImplementation(({Entries}) => Promise.resolve({
+        Entries: Entries.map((_: unknown, index: number) => ({ EventId: `event_${index}` }))
+    }));
+    mockClient(eventBridgeClient)
+        .on(PutEventsCommand)
+        .callsFake(putCmd)
+
+    await lastValueFrom(
+      from(messages).pipe(
+        batchPut({
+          eventBridgeClient,
+          detailType: 'test',
+          source: 'learningrecord.test',
+          eventBusName: 'eventbustest',
+          maxAttempts: 1,
+          throttleMs: 0,
+          maxMessageSize: sizeLimit,
+          maxBatchCount: 10 // Set a higher batch count to test size limit
+        }),
+        toArray()
+      )
+    );
+
+    // The function should have split the messages into separate batches due to size constraints
+    expect(putCmd).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not put groups of messages over the count limit', async () => {
+    const countLimit = 10;
+    const messages = new Array(countLimit + 5).fill({ test: 'test' }); // Creates more messages than the count limit
+
+
+    let eventBridgeClient = new EventBridgeClient({});
+    let putCmd = jest.fn().mockImplementation(({Entries}) => Promise.resolve({
+        Entries: Entries.map((_: unknown, index: number) => ({ EventId: `event_${index}` }))
+    }));
+    mockClient(eventBridgeClient)
+        .on(PutEventsCommand)
+        .callsFake(putCmd)
+
+    await lastValueFrom(
+      from(messages).pipe(
+        batchPut({
+          eventBridgeClient,
+          detailType: 'test',
+          source: 'learningrecord.test',
+          eventBusName: 'eventbustest',
+          maxAttempts: 1,
+          throttleMs: 0,
+          maxBatchCount: countLimit // Set the batch count limit
+        }),
+        toArray()
+      )
+    );
+
+    // The function should have split the messages into 2 batches: one with the count limit and one with the remainder
+    expect(putCmd).toHaveBeenCalledTimes(2);
+    expect(putCmd.mock.calls[0][0].Entries).toHaveLength(countLimit);
+    expect(putCmd.mock.calls[1][0].Entries).toHaveLength(5);
+  });
 })
