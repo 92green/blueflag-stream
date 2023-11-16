@@ -10,5 +10,9 @@ jobs:
         persist-credentials: false
     - name: Build
       run: yarn prep && yarn build
+      env:
+        NODE_OPTIONS: "--openssl-legacy-provider"
     - name: Test
       run: yarn test-all
+      env:
+        NODE_OPTIONS: "--openssl-legacy-provider"
