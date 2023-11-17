@@ -1,1 +1,1 @@
-module.exports = require('../lib/eventbus/index.js');
+module.exports = require('../dist/eventbus/index.js');
