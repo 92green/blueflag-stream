@@ -1,46 +1,60 @@
-import {DynamoDBClient, QueryCommand, QueryCommandInput, QueryCommandOutput, AttributeValue} from '@aws-sdk/client-dynamodb';
-import { unmarshall } from '@aws-sdk/util-dynamodb';
+import {
+    DynamoDBClient,
+    QueryCommand as DyanmoClientQueryCommand,
+    QueryCommandInput as DynamoClientQueryCommandInput,
+    AttributeValue
+} from '@aws-sdk/client-dynamodb';
+import {
+    QueryCommand as DocClientQueryCommand,
+    QueryCommandInput as DocClientQueryCommandInput,
+    DynamoDBDocumentClient
+} from "@aws-sdk/lib-dynamodb";
+import {unmarshall} from '@aws-sdk/util-dynamodb';
 import {Observable} from 'rxjs';
-import {of} from 'rxjs';
+import {from} from 'rxjs';
 import {EMPTY} from 'rxjs';
-import {map, mergeMap} from 'rxjs/operators';
-import {concatMap} from 'rxjs/operators';
-import {expand} from 'rxjs/operators';
-import {takeWhile} from 'rxjs/operators';
+import {
+    map,
+    concatMap,
+    expand
+} from 'rxjs/operators';
 
-type FeedbackPipe = (obs: Observable<QueryCommandOutput>) => Observable<QueryCommandOutput>;
-
-export default (dynamoClient: DynamoDBClient, params: any, feedbackPipe: FeedbackPipe = obs => obs): Observable<{[key: string]: AttributeValue;}> => {
-    
-    let sendQuery = (params: QueryCommandInput): Observable<QueryCommandOutput> => {
-        return new Observable((subscriber: any) => {
-            dynamoClient
-                .send(new QueryCommand(params))
-                .then((response) => {
-                    subscriber.next(response);
-                    subscriber.complete();
-                }, (err: any) => {
-                    subscriber.error(err);
-                });
-        });
-    };
-
-    return sendQuery(params).pipe(
+/**
+* Query all using the DynamoDBDocumentClient
+* By using the document client all marshalling and unmarshalling is handled for you
+* it is worth noting that this is so sufficently simple that it probably makes sense to just write the rxjs logic directly into your workflow instead of using this function
+**/
+queryAll = (docClient: DynamoDBDocumentClient, params: DocClientQueryCommandInput): Observable<Record<string, string>> => {
+    return from(docClient.send(new DocClientQueryCommand(params))).pipe(
         expand((response) => {
-            let {LastEvaluatedKey} = response;
-            if(LastEvaluatedKey) {
-                return of(response).pipe(
-                    feedbackPipe,
-                    mergeMap(() => sendQuery({
-                        ...params,
-                        ExclusiveStartKey: LastEvaluatedKey
-                    }))
-                );
+            if(response.LastEvaluatedKey) {
+                return from(docClient.send(new DocClientQueryCommand({
+                    ...params,
+                    ExclusiveStartKey: response.LastEvaluatedKey
+                })));
             }
             return EMPTY;
         }),
-        takeWhile(response => Boolean(response.LastEvaluatedKey), true),
         concatMap(response => response.Items ? response.Items : []),
-        map(ii => unmarshall(ii))
+    );
+};
+
+/**
+* Query all using the DynamoDBClient
+* Unlike the default queryAll this takes and returns unmarshalled data and loosely aligns with the previous queryAll function from 92green-aws-rxjs
+* Alike the default version it this is sufficently simple that it probably makes sense to just write the rxjs logic directly into your workflow instead of using this function
+**/
+const queryAllDynamoDBClient = (dynamoClient: DynamoDBClient, params: DynamoClientQueryCommandInput): Observable<{[key: string]: AttributeValue;}> => {
+    return from(dynamoClient.send(new QueryCommand(params))).pipe(
+        expand((response) => {
+            if(response.LastEvaluatedKey) {
+                return from(dynamoClient.send(new DynamoClientQueryCommand({
+                    ...params,
+                    ExclusiveStartKey: response.LastEvaluatedKey
+                })));
+            }
+            return EMPTY;
+        }),
+        concatMap(response => response.Items ? response.Items : [])
     );
 };
