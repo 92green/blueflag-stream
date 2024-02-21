@@ -33,7 +33,7 @@ export const queryAll = (docClient: DynamoDBDocumentClient, params: DocClientQue
             }
             return EMPTY;
         }),
-        concatMap(response => response.Items ? response.Items : []),
+        concatMap(response => response.Items ?? []),
     );
 };
 
@@ -53,7 +53,7 @@ export const queryAllDynamoDBClient = (dynamoClient: DynamoDBClient, params: Dyn
             }
             return EMPTY;
         }),
-        concatMap(response => response.Items ? response.Items : [])
+        concatMap(response => response.Items ?? [])
     );
 };
 
