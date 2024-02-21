@@ -1,4 +1,4 @@
-# 0.12.0
+# 1.0.0
 ## Breaking Changes
 * queryAll no longer uses DynamoDBClient but instead uses DocumentClient preventing the need to marshall and unmarshall data
 * batchWriteRetry no longer accepts feedbackPipe to mutate data before import (this is probably better implemented in place where required)
