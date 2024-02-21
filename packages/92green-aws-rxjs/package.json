@@ -1,6 +1,6 @@
 {
   "name": "@92green/92green-aws-rxjs",
-  "version": "0.12.0-alpha",
+  "version": "1.0.0-alpha",
   "description": "Rxjs algorithms for use with AWS SDK v3",
   "license": "MIT",
   "author": "Blueflag",
