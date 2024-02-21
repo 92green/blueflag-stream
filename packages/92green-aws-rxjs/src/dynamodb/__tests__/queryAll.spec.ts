@@ -13,9 +13,6 @@ describe('queryAll', () => {
         let responsePayload: QueryCommandOutput = {
             $metadata:{},
             Items: [
-                //marshall({number: 1}),
-                //marshall({number: 2}),
-                //marshall({number: 3})
                 {number: 1},
                 {number: 2},
                 {number: 3}
