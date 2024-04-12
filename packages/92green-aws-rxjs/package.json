@@ -1,6 +1,6 @@
 {
   "name": "@92green/92green-aws-rxjs",
-  "version": "1.0.0-alpha",
+  "version": "1.0.0-alpha-2",
   "description": "Rxjs algorithms for use with AWS SDK v3",
   "license": "MIT",
   "author": "Blueflag",
@@ -12,9 +12,7 @@
     "url": "https://github.com/92green/92green-stream/issues"
   },
   "files": [
-    "dist",
-    "eventbus",
-    "dynamodb"
+    "lib"
   ],
   "main": "lib/index.js",
   "scripts": {
