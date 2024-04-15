@@ -34,10 +34,6 @@
     "noEmit": false,
     "outDir": "./lib",
     "baseUrl": "./src",
-    "paths": {
-      // add path aliases for easier imports
-      "92green-aws-rxjs/*": ["./*"]
-    },
     // add type roots to allow for typing files / type overrides
     "typeRoots": [
       "node_modules/@types",
