@@ -1,69 +1,48 @@
 import {Observable, UnaryFunction} from 'rxjs';
 import {EMPTY} from 'rxjs';
 import {pipe} from 'rxjs';
-import {of} from 'rxjs';
 import {from} from 'rxjs';
-import {expand, map, mergeMap} from 'rxjs/operators';
-import {bufferCount} from 'rxjs/operators';
-import {concatMap} from 'rxjs/operators';
-import {BatchWriteItemCommand, BatchWriteItemCommandInput, BatchWriteItemCommandOutput} from "@aws-sdk/client-dynamodb";
-import type {BatchGetItemCommandOutput, DynamoDBClient} from "@aws-sdk/client-dynamodb"
-import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
+import {
+    expand,
+    mergeMap,
+    bufferCount,
+    last
+} from 'rxjs/operators';
+import {DynamoDBDocumentClient, BatchWriteCommand, BatchWriteCommandOutput} from '@aws-sdk/lib-dynamodb';
 
 type Config = {
-    dynamoDBClient: DynamoDBClient,
-    tableName: string,
-    returnItems?: boolean
+    docClient: DynamoDBDocumentClient,
+    tableName: string
 };
-
-type FeedbackPipe<T> = (obs: Observable<T>) => Observable<T>;
 
 const MAX_BATCH_WRITE = 25;
 
-export default function <Value>(config: Config, feedbackPipe: FeedbackPipe<BatchGetItemCommandOutput> = obs => obs): UnaryFunction<Observable<Value>, Observable<Value>> {
-    let sendQuery = (params: BatchWriteItemCommandInput): Observable<BatchWriteItemCommandOutput> => {
-        return new Observable((subscriber: any) => {
-            config
-                .dynamoDBClient
-                .send(new BatchWriteItemCommand(params))
-                .then((response) => {
-                    subscriber.next(response);
-                    subscriber.complete();
-                }, (err: any) => {
-                    subscriber.error(err);
-                });
-        });
-    };
-
-    let sendQueryWithRetry = (params: any) => sendQuery(params).pipe(
-        expand((response: BatchWriteItemCommandOutput) => {
-            let { UnprocessedItems } = response;
-            if (UnprocessedItems && Object.keys(UnprocessedItems).length > 0) {
-                return of(response).pipe(
-                    feedbackPipe,
-                    mergeMap(() => sendQuery({
-                        RequestItems: UnprocessedItems
-                    }))
-                );
-            }
-            return EMPTY;
-        })
-    );
+export default function <T>(config: Config): UnaryFunction<Observable<T>, Observable<T>> {
+    const {docClient, tableName} = config;
 
     return pipe(
-        map(ii => marshall(ii)),
         bufferCount(MAX_BATCH_WRITE),
-        concatMap((itemArray) => {
-            let sendObs = sendQueryWithRetry({
+        mergeMap((items) => {
+            return from(docClient.send(new BatchWriteCommand({
                 RequestItems: {
-                    [config.tableName]: itemArray
+                    [tableName]: items
                 }
-            });
-
-            return sendObs.pipe(
-                mergeMap(() => from(itemArray)),
-                map(ii => unmarshall(ii) as Value)
+            }))).pipe(
+                expand((response: BatchWriteCommandOutput) => {
+                    if(response.UnprocessedItems && response.UnprocessedItems[tableName]) {
+                        const command = new BatchWriteCommand({
+                            RequestItems: {
+                                [tableName]: response.UnprocessedItems[tableName]
+                            }
+                        });
+                        return from(docClient.send(command));
+                    }
+                    return EMPTY;
+                }),
+                // Wait for the observable to finish and then emit the incoming items back out
+                last(),
+                mergeMap(() => items)
             );
         })
     );
-};
+}

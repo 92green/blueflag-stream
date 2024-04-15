@@ -1,17 +1,17 @@
-// @flow
 import batchWriteWithRetry from '../batchWriteWithRetry';
 import {from, lastValueFrom} from 'rxjs';
-// import {tap} from 'rxjs/operators';
 import {mockClient} from "aws-sdk-client-mock";
 import {marshall} from '@aws-sdk/util-dynamodb';
-import {BatchWriteItemCommand, BatchWriteItemCommandOutput, DynamoDBClient} from "@aws-sdk/client-dynamodb"; //BatchGetItemCommandOutput
+import {DynamoDBClient} from "@aws-sdk/client-dynamodb"; //BatchGetItemCommandOutput
+import {DynamoDBDocumentClient, BatchWriteCommand, BatchWriteCommandOutput} from '@aws-sdk/lib-dynamodb';
 import {toArray} from 'rxjs/operators';
 
 
 describe('batchWriteWithRetry', () => {
     it('should retry unprocessed items', async () => {
         let dynamoDBClient = new DynamoDBClient({});
-        let responsePayloads: Array<BatchWriteItemCommandOutput> = [
+        const docClient = DynamoDBDocumentClient.from(dynamoDBClient);
+        let responsePayloads: Array<BatchWriteCommandOutput> = [
             {
                 $metadata: {},
                 UnprocessedItems: {
@@ -34,12 +34,12 @@ describe('batchWriteWithRetry', () => {
         let fn = jest.fn()
             .mockImplementationOnce(() => Promise.resolve(responsePayloads[0]))
             .mockImplementationOnce(() => Promise.resolve(responsePayloads[1]))
-        mockClient(dynamoDBClient).on(BatchWriteItemCommand).callsFake(fn)
-        
+        mockClient(docClient).on(BatchWriteCommand).callsFake(fn)
+
         await lastValueFrom(from([{}])
             .pipe(
                 batchWriteWithRetry({
-                    dynamoDBClient,
+                    docClient,
                     tableName: 'fake-table'
                 }),
             )
@@ -51,7 +51,8 @@ describe('batchWriteWithRetry', () => {
     it('should return items', async () => {
 
         let dynamoDBClient = new DynamoDBClient({});
-        mockClient(dynamoDBClient).on(BatchWriteItemCommand).resolves(
+        const docClient = DynamoDBDocumentClient.from(dynamoDBClient);
+        mockClient(docClient).on(BatchWriteCommand).resolves(
             {}
         );
 
@@ -59,7 +60,7 @@ describe('batchWriteWithRetry', () => {
             {
                 Item: {
                     foo: 100
-                }  
+                }
             },
             {
                 Item: {
@@ -77,7 +78,7 @@ describe('batchWriteWithRetry', () => {
             from(params)
             .pipe(
                 batchWriteWithRetry({
-                    dynamoDBClient,
+                    docClient,
                     tableName: 'fake-table'
                 }),
                 toArray()
@@ -93,12 +94,14 @@ describe('batchWriteWithRetry', () => {
         expect.assertions(1);
 
         let dynamoDBClient = new DynamoDBClient({});
-        mockClient(dynamoDBClient).rejects('!!!')
+        const docClient = DynamoDBDocumentClient.from(dynamoDBClient);
+        mockClient(docClient).on(BatchWriteCommand).rejects('!!!')
+
         await lastValueFrom(
-            from([123])
+            from([{Item: { foo: 100}}])
             .pipe(
                 batchWriteWithRetry({
-                    dynamoDBClient,
+                    docClient,
                     tableName: 'fake-table'
                 })
             )
