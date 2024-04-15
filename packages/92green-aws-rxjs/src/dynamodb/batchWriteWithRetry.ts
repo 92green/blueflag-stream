@@ -3,6 +3,7 @@ import {EMPTY} from 'rxjs';
 import {pipe} from 'rxjs';
 import {from} from 'rxjs';
 import {
+    map,
     expand,
     mergeMap,
     bufferCount,
@@ -17,10 +18,17 @@ type Config = {
 
 const MAX_BATCH_WRITE = 25;
 
-export default function <T>(config: Config): UnaryFunction<Observable<T>, Observable<T>> {
+export default function <T extends Record<string, any>>(config: Config): UnaryFunction<Observable<T>, Observable<T>> {
     const {docClient, tableName} = config;
 
     return pipe(
+        map((item: T) => {
+            return {
+                PutRequest: {
+                    Item: item
+                }
+            }
+        }),
         bufferCount(MAX_BATCH_WRITE),
         mergeMap((items) => {
             return from(docClient.send(new BatchWriteCommand({
@@ -41,7 +49,8 @@ export default function <T>(config: Config): UnaryFunction<Observable<T>, Observ
                 }),
                 // Wait for the observable to finish and then emit the incoming items back out
                 last(),
-                mergeMap(() => items)
+                mergeMap(() => items),
+                map((item) => item.PutRequest.Item)
             );
         })
     );
